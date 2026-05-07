@@ -4,98 +4,138 @@ from PIL import Image
 import datetime
 
 # --- SEITEN-KONFIGURATION ---
-st.set_page_config(page_title="KI-Blumen-Fundkiste", layout="wide")
+st.set_page_config(page_title="Magische KI-Fundkiste", layout="wide")
 
-# --- DAS PINK-CARTOON-DESIGN (CSS) ---
+# --- DAS ULTIMATIVE DESIGN (CSS ANIMATIONEN) ---
 st.markdown("""
     <style>
-    /* Haupt-Hintergrund in Pink */
+    /* 1. Pinker Hintergrund mit drehenden Sternen */
     .stApp {
-        background-color: #FFC0CB; /* Hellpink */
-        background-image: 
-            /* Linke Seite: Bäume und Blumen */
-            url("https://img.icons8.com/illustrations/parallax/512/forest.png"), 
-            /* Rechte Seite: Blumen */
-            url("https://img.icons8.com/illustrations/parallax/512/flowers.png");
-        background-repeat: no-repeat, no-repeat;
-        background-position: left bottom, right bottom;
-        background-size: 300px, 300px;
-        background-attachment: fixed;
+        background-color: #FFC0CB;
+        background-image: url("https://www.transparenttextures.com/patterns/stardust.png"); /* Sterne Textur */
+        animation: rotateStars 100s linear infinite;
     }
 
-    /* Damit der Text auf Pink lesbar bleibt (Dunkelgrau/Schwarz) */
-    h1, h2, h3, p, span, label {
-        color: #4B0082 !important; /* Indigo für guten Kontrast auf Pink */
-        font-family: 'Comic Sans MS', cursive, sans-serif; /* Cartoon-Vibe */
+    @keyframes rotateStars {
+        from { background-position: 0 0; }
+        to { background-position: 1000px 1000px; }
     }
 
-    /* Weiße Boxen für den Inhalt, damit es nicht zu wild aussieht */
-    .stFileUploader, .stButton, div[data-testid="stExpander"] {
-        background-color: rgba(255, 255, 255, 0.7);
-        padding: 20px;
-        border-radius: 20px;
-        border: 2px solid #FF69B4;
+    /* 2. Große Bäume im Hintergrund (Links und Rechts) */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        bottom: 0;
+        left: -50px;
+        width: 400px;
+        height: 600px;
+        background-image: url("https://img.icons8.com/illustrations/parallax/512/tree.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        z-index: 0;
+        opacity: 0.8;
     }
 
-    /* Archiv-Karten Styling */
-    div[data-testid="column"] {
-        background-color: rgba(255, 255, 255, 0.5);
-        padding: 10px;
-        border-radius: 15px;
-        border: 1px solid #FF69B4;
+    .stApp::after {
+        content: "";
+        position: fixed;
+        bottom: 0;
+        right: -50px;
+        width: 400px;
+        height: 600px;
+        background-image: url("https://img.icons8.com/illustrations/parallax/512/tree.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        transform: scaleX(-1); /* Spiegeln für die rechte Seite */
+        z-index: 0;
+        opacity: 0.8;
     }
+
+    /* 3. Wachsende Blumen Animation */
+    @keyframes grow {
+        from { transform: scale(0) translateY(100px); }
+        to { transform: scale(1) translateY(0); }
+    }
+
+    .flower-container {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .flower {
+        width: 80px;
+        height: 80px;
+        background-image: url("https://img.icons8.com/illustrations/parallax/512/flowers.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        animation: grow 3s ease-out forwards;
+    }
+
+    /* 4. Content lesbar machen */
+    .main-card {
+        background-color: rgba(255, 255, 255, 0.85);
+        padding: 30px;
+        border-radius: 30px;
+        border: 5px solid #FF69B4;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        z-index: 10;
+        position: relative;
+    }
+    
+    h1, p { color: #8B008B !important; font-family: 'Comic Sans MS', cursive; }
     </style>
+    
+    <!-- Blumen Container im HTML -->
+    <div class="flower-container">
+        <div class="flower" style="animation-delay: 0.5s;"></div>
+        <div class="flower" style="animation-delay: 1.2s;"></div>
+        <div class="flower" style="animation-delay: 0.2s;"></div>
+        <div class="flower" style="animation-delay: 1.8s;"></div>
+        <div class="flower" style="animation-delay: 0.8s;"></div>
+    </div>
     """, unsafe_allow_html=True)
 
-# --- ARCHIV INITIALISIEREN ---
+# --- ARCHIV & KI LOGIK ---
 if 'archiv' not in st.session_state:
     st.session_state['archiv'] = []
 
-# --- KI MODELL LADEN ---
 @st.cache_resource
 def load_model():
-    # Wir bleiben bei MobileNetV2 für Geschwindigkeit
     return pipeline("image-classification", model="google/mobilenet_v2_1.0_224")
 
-with st.spinner('Die Blumen-KI erwacht...'):
-    classifier = load_model()
+classifier = load_model()
 
-# --- APP LAYOUT ---
-st.title("🌸 Die Pinke Cartoon-Fundkiste 🌳")
-st.write("Lade ein Bild hoch und schau, was die KI darin entdeckt!")
+# --- APP INHALT ---
+st.markdown('<div class="main-card">', unsafe_allow_html=True)
+st.title("🌟 Magische Fundkiste im Wald 🌳")
+st.write("Lade ein Bild hoch – die KI und die Natur helfen dir beim Suchen!")
 
-# Hauptbereich
-col_main, col_spacer = st.columns([2, 1])
-
-with col_main:
-    uploaded_file = st.file_uploader("Finde etwas Neues...", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader("Was hast du gefunden?", type=["jpg", "png", "jpeg"])
 
 if uploaded_file:
-    image = Image.open(uploaded_file)
-    results = classifier(image)
-    label = results[0]['label']
-    score = results[0]['score']
-
-    st.image(image, width=400, caption="Dein Fundstück")
-    st.success(f"Ergebnis: Das sieht aus wie ein/eine **{label}**!")
+    img = Image.open(uploaded_file)
+    res = classifier(img)
+    label = res[0]['label']
     
-    if st.button("🌸 In die Blumenwiese (Archiv) speichern"):
-        eintrag = {
-            "bild": image,
-            "name": label,
-            "zeit": datetime.datetime.now().strftime("%H:%M"),
-        }
-        st.session_state.archiv.insert(0, eintrag)
+    st.image(img, width=350)
+    st.subheader(f"Gefunden: {label}")
+    
+    if st.button("✨ Ins Archiv legen"):
+        st.session_state.archiv.insert(0, {"img": img, "name": label, "time": datetime.datetime.now().strftime("%H:%M")})
         st.balloons()
+st.markdown('</div>', unsafe_allow_html=True)
 
-# --- ARCHIV ---
-st.write("## 📂 Fundstücke in der Wiese")
-if not st.session_state.archiv:
-    st.write("Noch keine Schätze gefunden.")
-else:
+# --- ARCHIV UNTEN ---
+st.write("---")
+st.header("📂 Archiv der Fundstücke")
+if st.session_state.archiv:
     cols = st.columns(4)
-    for idx, item in enumerate(st.session_state.archiv):
-        with cols[idx % 4]:
-            st.image(item["bild"], use_container_width=True)
-            st.write(f"**{item['name']}**")
-            st.write(f"🕒 {item['zeit']}")
+    for i, item in enumerate(st.session_state.archiv):
+        with cols[i % 4]:
+            st.image(item["img"], use_container_width=True)
+            st.write(f"**{item['name']}** ({item['time']})")
