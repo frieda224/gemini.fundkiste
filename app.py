@@ -4,19 +4,20 @@ from PIL import Image
 import datetime
 
 # --- SEITEN-KONFIGURATION ---
-st.set_page_config(page_title="Erdbeer-Fundkiste", layout="wide")
+st.set_page_config(page_title="Cozy Strawberry Box", layout="wide")
 
-# --- DAS DESIGN (BREITE STREIFEN & DUNKELBLAU) ---
+# --- COZY SWEET DESIGN (CSS) ---
 st.markdown("""
     <style>
-    /* Hintergrund: Hellrosa mit SEHR BREITEN hellblauen Streifen */
+    /* 1. Hintergrund: Weiche, breite Streifen in Cozy-Farben */
     .stApp {
-        background-color: #FFD1DC; 
-        background-image: linear-gradient(90deg, #ADD8E6 50%, transparent 50%);
-        background-size: 300px 300px; /* Hier stellen wir die Breite ein (150px pro Farbe) */
+        background-color: #FFF0F5; /* Lavender Blush (sehr sanftes Rosa) */
+        background-image: linear-gradient(90deg, #E0F2F7 50%, transparent 50%); /* Sehr helles Pastellblau */
+        background-size: 240px 240px;
+        position: relative;
     }
 
-    /* Erdbeeren als Muster über das Ganze */
+    /* 2. Erdbeeren über den gesamten Hintergrund verteilt */
     .stApp::before {
         content: "";
         position: fixed;
@@ -26,33 +27,51 @@ st.markdown("""
         height: 100%;
         background-image: url("https://img.icons8.com/emoji/96/strawberry.png");
         background-repeat: repeat;
-        background-size: 120px;
-        opacity: 0.15;
+        background-size: 100px;
+        opacity: 0.12; /* Dezent und gemütlich */
         z-index: 0;
         pointer-events: none;
     }
 
-    /* Dunkelblaue Schrift und Comic Sans */
+    /* 3. Cozy Typography: Dunkelblau, aber weicher */
     h1, h2, h3, p, span, label, div {
-        color: #00008B !important;
-        font-family: 'Comic Sans MS', cursive, sans-serif;
+        color: #2C3E50 !important; /* Ein sanfteres Dunkelblau-Grau */
+        font-family: 'Quicksand', 'Segoe UI', sans-serif;
     }
 
-    /* Weiße Box für bessere Lesbarkeit */
+    /* 4. Die "Main Card" - Weich und abgerundet */
     .main-box {
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 30px;
-        border-radius: 20px;
-        border: 5px solid #00008B;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 40px;
+        border-radius: 40px; /* Super abgerundet für Cozy-Look */
+        border: 2px solid #D1E8E2;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         margin-top: 20px;
+        z-index: 10;
+        position: relative;
     }
 
-    /* Buttons anpassen */
+    /* Styling für den Datei-Uploader */
+    .stFileUploader {
+        border: 2px dashed #B8D8D8 !important;
+        border-radius: 20px;
+        background: #F9FFFF;
+    }
+
+    /* Der Button - Sweet & Rounded */
     .stButton>button {
-        background-color: #00008B !important;
+        background-color: #FFB7C5 !important; /* Sanftes Erdbeer-Rosa */
         color: white !important;
-        border-radius: 15px;
-        width: 100%;
+        border: none !important;
+        border-radius: 25px !important;
+        padding: 10px 25px !important;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+    
+    .stButton>button:hover {
+        transform: scale(1.02);
+        background-color: #FFA4B5 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -61,52 +80,54 @@ st.markdown("""
 if 'archiv' not in st.session_state:
     st.session_state['archiv'] = []
 
-# Wir nutzen ein sehr leichtes Modell, damit es schnell lädt
 @st.cache_resource
 def load_ki():
     return pipeline("image-classification", model="google/mobilenet_v2_1.0_224")
 
-# Lade-Anzeige für die Schüler
-with st.spinner('Erdbeer-KI wird warmgelaufen...'):
+with st.spinner('Dein gemütliches Fundbüro wird vorbereitet...'):
     classifier = load_ki()
 
 # --- APP INHALT ---
 st.markdown('<div class="main-box">', unsafe_allow_html=True)
 
-st.title("🍓 Die breite Streifen-Fundkiste 🍓")
-st.write("Dunkelblaue Schrift & Erdbeeren – Alles bereit!")
+st.title("🍓 My Cozy Fundkiste")
+st.write("Lade ein Bild hoch und lass uns schauen, was du Schönes gefunden hast.")
 
-datei = st.file_uploader("Bild hier hochladen", type=["jpg", "jpeg", "png"])
+datei = st.file_uploader("", type=["jpg", "jpeg", "png"])
 
 if datei:
     bild = Image.open(datei)
     ergebnis = classifier(bild)
-    name = ergebnis[0]['label']
+    name = ergebnis[0]['label'].replace('_', ' ').title() # Schönere Formatierung
     
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 1])
     with col1:
-        st.image(bild, width=300)
+        st.image(bild, use_container_width=True, caption="Dein Fundstück")
     with col2:
         st.subheader(f"Gefunden: {name}")
-        if st.button("Ab ins Archiv!"):
+        if st.button("Ab ins Archiv"):
             eintrag = {
                 "bild": bild,
                 "name": name,
                 "zeit": datetime.datetime.now().strftime("%H:%M")
             }
             st.session_state.archiv.insert(0, eintrag)
-            st.balloons()
+            st.toast("Gespeichert! ✨")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
 # --- ARCHIV ---
-st.write("### 📂 Fundstücke")
+st.write("---")
+st.subheader("☁️ Gesammelte Schätze")
+
 if st.session_state.archiv:
     spalten = st.columns(4)
     for i, item in enumerate(st.session_state.archiv):
         with spalten[i % 4]:
-            st.markdown('<div style="background:white; padding:10px; border-radius:10px; border:2px solid #00008B;">', unsafe_allow_html=True)
+            st.markdown('<div style="background:white; padding:15px; border-radius:25px; border:1px solid #FFD1DC; margin-bottom:10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.02);">', unsafe_allow_html=True)
             st.image(item["bild"], use_container_width=True)
             st.write(f"**{item['name']}**")
-            st.write(f"🕒 {item['zeit']}")
+            st.write(f"<small>{item['zeit']} Uhr</small>", unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
+else:
+    st.info("Noch ist die Kiste leer. Zeit für den ersten Fund!")
