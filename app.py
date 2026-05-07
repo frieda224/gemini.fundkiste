@@ -11,9 +11,9 @@ st.markdown("""
     <style>
     /* Hintergrund: Schmale, sanfte Streifen */
     .stApp {
-        background-color: #FFF5F7; /* Ganz zartes Rosa */
-        background-image: linear-gradient(90deg, #F0F9FF 50%, transparent 50%); /* Zartes Blau */
-        background-size: 40px 40px; /* Schmale Streifen */
+        background-color: #FFF5F7; 
+        background-image: linear-gradient(90deg, #F0F9FF 50%, transparent 50%); 
+        background-size: 40px 40px; 
         position: relative;
     }
 
@@ -25,14 +25,12 @@ st.markdown("""
         left: 0;
         width: 100%;
         height: 100%;
-        /* Zwei Hintergrundbilder: Eines für Erdbeeren, eines für Kirschen */
         background-image: 
             url("https://img.icons8.com/emoji/48/strawberry.png"),
             url("https://img.icons8.com/emoji/48/cherries.png");
         background-repeat: repeat, repeat;
-        /* Versetzte Positionierung, damit sie sich mischen */
-        background-position: 0 0, 40px 40px; 
-        background-size: 120px 120px;
+        background-position: 0 0, 20px 20px; 
+        background-size: 100px 100px;
         opacity: 0.12;
         z-index: 0;
         pointer-events: none;
@@ -63,6 +61,7 @@ st.markdown("""
         border: none !important;
         padding: 10px 20px !important;
         font-weight: bold;
+        width: 100%;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -83,7 +82,7 @@ with st.spinner('Früchte werden sortiert...'):
 st.markdown('<div class="main-box">', unsafe_allow_html=True)
 
 st.title("🍓 My Cozy Fruit-Fundkiste 🍒")
-st.write("Schmale Streifen, Erdbeeren und Kirschen. Was hast du heute gefunden?")
+st.write("Schmale Streifen, Erdbeeren und Kirschen. Lade dein Foto hoch!")
 
 datei = st.file_uploader("", type=["jpg", "jpeg", "png"])
 
@@ -97,4 +96,33 @@ if datei:
     with col1:
         st.image(bild, use_container_width=True, caption="Dein Fundstück")
     with col2:
-        st.subheader(f"G
+        # Hier ist die korrigierte Stelle
+        st.subheader(f"Gefunden: {name}")
+        
+        if st.button("Ab ins Früchte-Archiv"):
+            eintrag = {
+                "bild": bild,
+                "name": name,
+                "zeit": datetime.datetime.now().strftime("%H:%M")
+            }
+            st.session_state.archiv.insert(0, eintrag)
+            st.toast("Im Archiv gespeichert! ✨")
+            st.balloons()
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# --- ARCHIV ---
+st.write("---")
+st.subheader("☁️ Letzte Funde")
+
+if st.session_state.archiv:
+    cols = st.columns(4)
+    for i, item in enumerate(st.session_state.archiv):
+        with cols[i % 4]:
+            st.markdown('<div style="background:white; padding:15px; border-radius:20px; border:1px solid #FFE4E1; margin-bottom: 15px;">', unsafe_allow_html=True)
+            st.image(item["bild"], use_container_width=True)
+            st.write(f"**{item['name']}**")
+            st.write(f"<small>{item['zeit']} Uhr</small>", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+else:
+    st.info("Noch ist die Kiste leer. Zeit für den ersten Fund!")
