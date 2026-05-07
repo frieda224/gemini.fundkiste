@@ -4,125 +4,67 @@ from PIL import Image
 import datetime
 
 # --- SEITEN-KONFIGURATION ---
-st.set_page_config(page_title="Cozy Fruit Box", layout="wide")
+st.set_page_config(page_title="My Cozy Fundkiste", layout="wide")
 
-# --- COZY FRUIT DESIGN (STREIFEN, ERDBEEREN & KIRSCHEN) ---
+# --- DAS ULTIMATIVE COZY DESIGN (BASIEREND AUF DEINEM BILD) ---
 st.markdown("""
     <style>
-    /* Hintergrund: Schmale, sanfte Streifen */
+    /* 1. Hintergrund: Schmale blau-rosa Streifen */
     .stApp {
-        background-color: #FFF5F7; 
-        background-image: linear-gradient(90deg, #F0F9FF 50%, transparent 50%); 
-        background-size: 40px 40px; 
-        position: relative;
+        background-color: #FFD1DC; 
+        background-image: linear-gradient(90deg, #CEF0FF 50%, transparent 50%); 
+        background-size: 60px 100%; 
     }
 
-    /* Frucht-Layer: Erdbeeren und Kirschen gemischt */
+    /* 2. Überall verstreute Früchte im Hintergrund */
     .stApp::before {
         content: "";
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0; width: 100%; height: 100%;
         background-image: 
             url("https://img.icons8.com/emoji/48/strawberry.png"),
             url("https://img.icons8.com/emoji/48/cherries.png");
-        background-repeat: repeat, repeat;
-        background-position: 0 0, 20px 20px; 
-        background-size: 100px 100px;
-        opacity: 0.12;
+        background-repeat: repeat;
+        background-position: 0 0, 30px 30px;
+        background-size: 150px 150px;
+        opacity: 0.2;
         z-index: 0;
-        pointer-events: none;
     }
 
-    /* Schrift und Cozy-Look */
-    h1, h2, h3, p, label {
-        color: #3D3D3D !important;
-        font-family: 'Quicksand', sans-serif;
-    }
-
+    /* 3. Der zentrale helle Rahmen (Main Container) */
     .main-box {
-        background-color: rgba(255, 255, 255, 0.92);
-        padding: 30px;
-        border-radius: 35px;
-        border: 2px solid #FFD1DC;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-        z-index: 10;
+        background-color: #FFF9E5; /* Cremiges Gelb/Weiß */
+        padding: 40px;
+        border-radius: 50px;
+        border: 8px solid #FF8DA1; /* Rosa gepunkteter Rahmen-Effekt via Border */
+        outline: 15px solid #FFF9E5;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        max-width: 800px;
+        margin: 50px auto;
         position: relative;
-        margin-top: 10px;
+        z-index: 5;
+        text-align: center;
     }
 
-    /* Button Styling */
-    .stButton>button {
-        background-color: #FFB7C5 !important;
-        color: white !important;
-        border-radius: 25px !important;
-        border: none !important;
-        padding: 10px 20px !important;
-        font-weight: bold;
-        width: 100%;
+    /* 4. Dekorative Elemente (Baum und Pflanzen) */
+    /* Kirschbaum links */
+    .tree-left {
+        position: fixed;
+        left: 10%;
+        bottom: 15%;
+        width: 250px;
+        z-index: 6;
     }
-    </style>
-    """, unsafe_allow_html=True)
+    /* Erdbeerpflanze rechts */
+    .berry-right {
+        position: fixed;
+        right: 10%;
+        bottom: 15%;
+        width: 250px;
+        z-index: 6;
+    }
 
-# --- KI LOGIK ---
-if 'archiv' not in st.session_state:
-    st.session_state['archiv'] = []
-
-@st.cache_resource
-def load_ki():
-    # Nutzt das schnelle MobileNetV2 Modell
-    return pipeline("image-classification", model="google/mobilenet_v2_1.0_224")
-
-with st.spinner('Früchte werden sortiert...'):
-    classifier = load_ki()
-
-# --- APP INHALT ---
-st.markdown('<div class="main-box">', unsafe_allow_html=True)
-
-st.title("🍓 My Cozy Fruit-Fundkiste 🍒")
-st.write("Schmale Streifen, Erdbeeren und Kirschen. Lade dein Foto hoch!")
-
-datei = st.file_uploader("", type=["jpg", "jpeg", "png"])
-
-if datei:
-    bild = Image.open(datei)
-    ergebnis = classifier(bild)
-    # Den Namen des Objekts schön formatieren
-    name = ergebnis[0]['label'].split(',')[0].title().replace('_', ' ')
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(bild, use_container_width=True, caption="Dein Fundstück")
-    with col2:
-        # Hier ist die korrigierte Stelle
-        st.subheader(f"Gefunden: {name}")
-        
-        if st.button("Ab ins Früchte-Archiv"):
-            eintrag = {
-                "bild": bild,
-                "name": name,
-                "zeit": datetime.datetime.now().strftime("%H:%M")
-            }
-            st.session_state.archiv.insert(0, eintrag)
-            st.toast("Im Archiv gespeichert! ✨")
-            st.balloons()
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- ARCHIV ---
-st.write("---")
-st.subheader("☁️ Letzte Funde")
-
-if st.session_state.archiv:
-    cols = st.columns(4)
-    for i, item in enumerate(st.session_state.archiv):
-        with cols[i % 4]:
-            st.markdown('<div style="background:white; padding:15px; border-radius:20px; border:1px solid #FFE4E1; margin-bottom: 15px;">', unsafe_allow_html=True)
-            st.image(item["bild"], use_container_width=True)
-            st.write(f"**{item['name']}**")
-            st.write(f"<small>{item['zeit']} Uhr</small>", unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-else:
-    st.info("Noch ist die Kiste leer. Zeit für den ersten Fund!")
+    /* 5. Styling für Text und Archiv */
+    h1, h2, h3, p {
+        color: #1A3A5A !important;
+        font-family: 'Comic Sans MS', cursive,
