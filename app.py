@@ -4,20 +4,19 @@ from PIL import Image
 import datetime
 
 # --- SEITEN-KONFIGURATION ---
-st.set_page_config(page_title="Erdbeer-KI-Fundkiste", layout="wide")
+st.set_page_config(page_title="Erdbeer-Fundkiste", layout="wide")
 
-# --- DAS ERDBEER-STREIFEN-DESIGN (CSS) ---
+# --- DAS DESIGN (BREITE STREIFEN & DUNKELBLAU) ---
 st.markdown("""
     <style>
-    /* 1. Hintergrund: Hellrosa mit hellblauen Streifen */
+    /* Hintergrund: Hellrosa mit SEHR BREITEN hellblauen Streifen */
     .stApp {
-        background-color: #FFD1DC; /* Hellrosa */
-        background-image: linear-gradient(90deg, rgba(173, 216, 230, 0.4) 50%, transparent 50%); /* Hellblaue Streifen */
-        background-size: 80px 80px;
-        position: relative;
+        background-color: #FFD1DC; 
+        background-image: linear-gradient(90deg, #ADD8E6 50%, transparent 50%);
+        background-size: 300px 300px; /* Hier stellen wir die Breite ein (150px pro Farbe) */
     }
 
-    /* 2. Erdbeeren im Hintergrund (fixiert) */
+    /* Erdbeeren als Muster über das Ganze */
     .stApp::before {
         content: "";
         position: fixed;
@@ -25,99 +24,89 @@ st.markdown("""
         left: 0;
         width: 100%;
         height: 100%;
-        /* Nutzt ein Erdbeer-Muster von einem Icon-Provider */
         background-image: url("https://img.icons8.com/emoji/96/strawberry.png");
         background-repeat: repeat;
-        background-size: 150px;
-        opacity: 0.2; /* Dezent im Hintergrund */
+        background-size: 120px;
+        opacity: 0.15;
         z-index: 0;
         pointer-events: none;
     }
 
-    /* 3. Dunkelblaue Schrift für alles */
-    h1, h2, h3, p, span, label, .stMarkdown {
-        color: #00008B !important; /* Dunkelblau (DarkBlue) */
+    /* Dunkelblaue Schrift und Comic Sans */
+    h1, h2, h3, p, span, label, div {
+        color: #00008B !important;
         font-family: 'Comic Sans MS', cursive, sans-serif;
-        font-weight: bold;
     }
 
-    /* 4. Weiße Box für die Bedienung, damit man trotz Streifen alles erkennt */
-    .main-container {
-        background-color: rgba(255, 255, 255, 0.8);
-        padding: 40px;
-        border-radius: 25px;
-        border: 4px solid #00008B;
-        z-index: 10;
-        position: relative;
+    /* Weiße Box für bessere Lesbarkeit */
+    .main-box {
+        background-color: rgba(255, 255, 255, 0.85);
+        padding: 30px;
+        border-radius: 20px;
+        border: 5px solid #00008B;
+        margin-top: 20px;
     }
 
-    /* Styling für den Datei-Uploader und Buttons */
-    .stFileUploader, .stButton>button {
-        border: 2px solid #00008B !important;
-        border-radius: 10px;
-    }
-    
+    /* Buttons anpassen */
     .stButton>button {
         background-color: #00008B !important;
         color: white !important;
+        border-radius: 15px;
+        width: 100%;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- ARCHIV & KI LOGIK ---
+# --- KI LOGIK ---
 if 'archiv' not in st.session_state:
     st.session_state['archiv'] = []
 
+# Wir nutzen ein sehr leichtes Modell, damit es schnell lädt
 @st.cache_resource
-def load_model():
-    # Schnelles Modell von Google
+def load_ki():
     return pipeline("image-classification", model="google/mobilenet_v2_1.0_224")
 
-classifier = load_model()
+# Lade-Anzeige für die Schüler
+with st.spinner('Erdbeer-KI wird warmgelaufen...'):
+    classifier = load_ki()
 
 # --- APP INHALT ---
-# Wir packen alles in ein Div mit der Klasse 'main-container' für das Design
-st.markdown('<div class="main-container">', unsafe_allow_html=True)
+st.markdown('<div class="main-box">', unsafe_allow_html=True)
 
-st.title("🍓 Die Erdbeer-Streifen Fundkiste 🍓")
-st.write("Scanne ein Objekt und die KI sortiert es ins Archiv!")
+st.title("🍓 Die breite Streifen-Fundkiste 🍓")
+st.write("Dunkelblaue Schrift & Erdbeeren – Alles bereit!")
 
-uploaded_file = st.file_uploader("Bild hier reinwerfen...", type=["jpg", "png", "jpeg"])
+datei = st.file_uploader("Bild hier hochladen", type=["jpg", "jpeg", "png"])
 
-if uploaded_file:
-    img = Image.open(uploaded_file)
-    with st.spinner('KI analysiert...'):
-        res = classifier(img)
-        label = res[0]['label']
+if datei:
+    bild = Image.open(datei)
+    ergebnis = classifier(bild)
+    name = ergebnis[0]['label']
     
-    col_img, col_txt = st.columns([1, 1])
-    with col_img:
-        st.image(img, width=300, caption="Dein Fundstück")
-    with col_txt:
-        st.subheader(f"Erkannt als: {label}")
-        if st.button("Ab ins Erdbeer-Archiv!"):
-            st.session_state.archiv.insert(0, {
-                "img": img, 
-                "name": label, 
-                "time": datetime.datetime.now().strftime("%H:%M")
-            })
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(bild, width=300)
+    with col2:
+        st.subheader(f"Gefunden: {name}")
+        if st.button("Ab ins Archiv!"):
+            eintrag = {
+                "bild": bild,
+                "name": name,
+                "zeit": datetime.datetime.now().strftime("%H:%M")
+            }
+            st.session_state.archiv.insert(0, eintrag)
             st.balloons()
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- ARCHIV SEKTION ---
-st.write("---")
-st.header("📂 Das Archiv")
-
+# --- ARCHIV ---
+st.write("### 📂 Fundstücke")
 if st.session_state.archiv:
-    cols = st.columns(4)
+    spalten = st.columns(4)
     for i, item in enumerate(st.session_state.archiv):
-        with cols[i % 4]:
-            # Archiv-Karten auch mit weißem Hintergrund für Lesbarkeit
-            st.markdown('<div style="background:rgba(255,255,255,0.7); padding:10px; border-radius:10px; border:2px solid #00008B;">', unsafe_allow_html=True)
-            st.image(item["img"], use_container_width=True)
+        with spalten[i % 4]:
+            st.markdown('<div style="background:white; padding:10px; border-radius:10px; border:2px solid #00008B;">', unsafe_allow_html=True)
+            st.image(item["bild"], use_container_width=True)
             st.write(f"**{item['name']}**")
-            st.write(f"🕒 {item['time']}")
+            st.write(f"🕒 {item['zeit']}")
             st.markdown('</div>', unsafe_allow_html=True)
-else:
-    st.write("Noch keine Erdbeeren... äh, Fundstücke hier!")
